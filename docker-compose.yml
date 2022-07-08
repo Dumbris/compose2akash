@@ -1,0 +1,79 @@
+version: '3'
+
+services:
+  minio1:
+    image: minio/minio:latest
+    volumes:
+      - ./data:/data1
+    ports:
+      - "9001:9000"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    command: server /data1
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3      
+
+  createbuckets:
+      image: minio/mc
+      depends_on:
+        - minio1
+      volumes:
+          - ./benchs:/benchs
+          #/usr/bin/mc rm -r --force myminio/sift-data;
+      entrypoint: >
+        /bin/sh -c "
+        /usr/bin/mc config host add myminio http://minio1:9000 minio minio123;
+        /usr/bin/mc rm -r --force myminio/grocery-images;
+        /usr/bin/mc mb myminio/sift-data;
+        /usr/bin/mc mb myminio/grocery-images;
+        /usr/bin/mc policy download myminio/sift-data;
+        /usr/bin/mc policy download myminio/grocery-images;
+        /usr/bin/mc cp /benchs/data/images/TSC/* myminio/grocery-images/;
+        exit 0;
+        "      
+
+  app:
+    image: 100nuts/sift:latest
+    restart: always
+    build: .
+    depends_on:
+      - minio1
+    volumes:
+      - ./ViT-B-32.pt:/nuts_sift/ViT-B-32.pt
+      
+    ports:
+      - "5001:80"      
+    environment:
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio123
+      - AWS_ENDPOINT=http://minio1:9000
+      - S3_BUCKET=sift-data
+      #- S3_KEY=test
+      - S3_KEY=clip
+      - TASK_COMMAND=serve
+      - INDEX_CHUNK_SIZE=30000000
+      #- INDEXFACTORY='PCA64,IVF1024,PQ16'
+      - INDEXFACTORY='IndexFlatIP'
+      - NUM_WORKERS=1
+      - DATA_DIR_NAME=data
+
+    command: serve
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthcheck"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+  #cmd:
+    #image: 100nuts/sift:latest
+    #restart: never
+    #build: .
+    #environment:
+      #- AWS_ACCESS_KEY_ID=minio
+    #  - AWS_SECRET_ACCESS_KEY=minio123
+    #  - AWS_ENDPOINT="http://minio1:9000"
+    #  - S3_BUCKET="sift-data"
