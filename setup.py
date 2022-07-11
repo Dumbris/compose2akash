@@ -16,12 +16,12 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    name='vsearch',
+    name='akashpose',
     python_requires='>3.6.0',
     version='1.0.1',
     url='https://localhost',
     license='Apache License 2.0',
-    description=('Package for search evaluation'),
+    description=('Package for akash'),
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(exclude=['tests']),
