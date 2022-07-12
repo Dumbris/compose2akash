@@ -1,6 +1,9 @@
 
 import sys
 import ruamel.yaml
+from akashpose.helper import traverse
+from akashpose.compose2akash import transform
+
 
 def main():
     yaml = ruamel.yaml.YAML()
@@ -9,8 +12,10 @@ def main():
 
     with open("docker-compose.yml", 'r') as ymlfile:
         data = yaml.load(ymlfile)
-        print(len(data))
-    yaml.dump(data, sys.stdout)
+        #for p, v in traverse(data, []):
+            #print(p,v, type(v))
+        akash = transform(data)
+    yaml.dump(akash, sys.stdout)
 
 if __name__ == "__main__":
     main()
