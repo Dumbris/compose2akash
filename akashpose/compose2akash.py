@@ -14,3 +14,11 @@ def transform(dc_data):
                     res[name][copy_to] = props[copy_from]
     return res
 
+def act_copy(_from,_to):
+    _to = _from.copy()
+    return _to
+
+_rules = [
+    {'from':'image', 'to':'image', 'action': act_copy}
+]
+
